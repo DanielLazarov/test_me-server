@@ -1,4 +1,8 @@
 --As postgres
+
+CREATE USER user_t WITH PASSWORD '123';
+GRANT ALL PRIVILEGES ON DATABASE "test_me" to tester;
+
 CREATE TABLE topics(
     id SERIAL PRIMARY KEY,
     name TEXT UNIQUE NOT NULL
