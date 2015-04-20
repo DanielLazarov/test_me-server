@@ -16,7 +16,7 @@ sub getTests($)
     my $all_difficulties = 1;
     my $all_topics = 1;
 
-    if($$params{dificulty})
+    if($$params{difficulty})
     {
         $all_difficulties = 0;
     }
@@ -34,7 +34,7 @@ sub getTests($)
             AND (topic_id = ? OR ?)
         }
     );
-    $sth->execute($$params{dificulty}, $all_difficulties, $$params{topic}, $all_topics);
+    $sth->execute($$params{difficulty}, $all_difficulties, $$params{topic}, $all_topics);
 
     my $result = {};
     
