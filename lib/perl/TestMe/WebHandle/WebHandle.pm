@@ -9,7 +9,10 @@ use Try::Tiny;
 use Data::Dumper;
 
 use ErrorHandle::Error::Compact;
+
 use TestMe::Tests::Tests;
+use TestMe::Security::Security;
+use TestMe::Accounts::Accounts;
 
 sub handle($)
 {
@@ -108,7 +111,10 @@ sub Action($)
     my($self)= @_;
 
     my $actions_map = {
-       get_tests => \&TestMe::Tests::Tests::getTests
+       get_tests            => \&TestMe::Tests::Tests::getTests,
+       create_account       =>\&TestMe::Accounts::Accounts::createAccount,
+       login                => \&TestMe::Security::Security::logIn,
+       get_account_details  => \&TestMe::Accounts::Accounts::getAccountDetails
     };
 
     if(defined $$self{cgi}{action} && exists $$actions_map{$$self{cgi}{action}})

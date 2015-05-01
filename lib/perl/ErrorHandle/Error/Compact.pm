@@ -5,7 +5,7 @@ use strict;
 use Exporter qw(import);
 
 our @ISA =   qw(Exporter);
-our @EXPORT = qw(TRACE ASSERT ASSERT_PEER ASSER_USER);
+our @EXPORT = qw(TRACE ASSERT ASSERT_PEER ASSERT_USER);
 
 
 sub TRACE($;$)

@@ -68,3 +68,38 @@ CREATE TABLE questions(
 );
 GRANT ALL ON questions TO t_usr;
 GRANT ALL ON questions_id_seq TO t_usr;
+
+CREATE TABLE account_ranks(
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE
+);
+GRANT ALL ON account_ranks TO t_usr;
+GRANT ALL ON account_ranks_id_seq TO t_usr;
+
+CREATE TABLE accounts(
+    id SERIAL PRIMARY KEY,
+    email TEXT NOT NULL UNIQUE,
+    password TEXT NOT NULL,
+    account_id TEXT NOT NULL UNIQUE DEFAULT md5(now()::text),
+    first_name TEXT,
+    last_name TEXT,
+    rank_id INTEGER REFERENCES account_ranks(id)
+);
+GRANT ALL ON accounts TO t_usr;
+GRANT ALL ON accounts_id_seq TO t_usr;
+
+CREATE VIEW accounts_vw AS(
+    SELECT A.*, AR.name AS rank__name
+    FROM accounts A 
+    JOIN account_ranks AR ON A.rank_id = AR.id  
+);
+GRANT ALL ON accounts_vw TO t_usr;
+
+CREATE TABLE account_sessions(
+    id SERIAL PRIMARY KEY,
+    session_token TEXT NOT NULL UNIQUE DEFAULT md5(now()::text),
+    account_id TEXT NOT NULL
+);
+GRANT ALL ON account_sessions TO t_usr;
+GRANT ALL ON account_sessions_id_seq TO t_usr;
+
