@@ -20,6 +20,7 @@ sub handle($)
 
     #dbh
     my $dbh = DBI->connect("DBI:Pg:dbname=test_me;host=localhost", "t_usr", "123", {RaiseError => 1, AutoCommit => 0});
+    $dbh->{pg_enable_utf8} = 1;    
     
     #cgi
     my $cgi = handleCGIParams();
@@ -112,7 +113,7 @@ sub Action($)
 
     my $actions_map = {
        get_tests            => \&TestMe::Tests::Tests::getTests,
-       create_account       =>\&TestMe::Accounts::Accounts::createAccount,
+       create_account       => \&TestMe::Accounts::Accounts::createAccount,
        login                => \&TestMe::Security::Security::logIn,
        get_account_details  => \&TestMe::Accounts::Accounts::getAccountDetails
     };

@@ -1,16 +1,11 @@
 #!/usr/bin/perl -w
 
-#binmode (STDIN, ":utf8");
-#binmode (STDOUT, ":utf8");
-#binmode (STDERR, ":utf8");
-
-use lib qw(/home/daniel/test_system_project/test_me-server/lib/perl);
+binmode (STDIN, ":utf8");
+binmode (STDOUT, ":utf8");
+binmode (STDERR, ":utf8");
 
 use TestMe::WebHandle::WebHandle;
+TestMe::WebHandle::WebHandle->handle();
 
-if(shift)
-{
-    TestMe::WebHandle::WebHandle->handle();
-}
 
 1;
