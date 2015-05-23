@@ -123,12 +123,6 @@ sub beginTest($)
 sub getQuestion($)
 {
     my ($app) = @_;
-
-    my $question_types = { #TODO sync with DB
-        1 => "single_answer",
-        2 => "multiple_answers",
-        3 => "free_answer",
-    };
 #TODO Assert Account session
     my $params = $$app{cgi};
 
@@ -151,15 +145,23 @@ sub getQuestion($)
     ASSERT_USER(scalar @{$$test_session_row{questions_id}} > $$params{question_number}, "Test Has finished", "TESTFINISHED");
     $sth = $$app{dbh}->prepare("SELECT * FROM questions where id = ?");
     $sth->execute($$test_session_row{questions_id}[$$params{question_number}]);
-    my $question_row = $sth->fetchrow_hashref;
+    my $general_question_row = $sth->fetchrow_hashref;
      
-     
+    my $result;
+    if($$general_question_row{single_answer_question_id})
+    {
+        $sth = $$app{dbh}->prepare("
+            SELECT * 
+            FROM single_answer_questions WHERE id = ?        
+        ");
+        $sth->execute($$general_question_row{single_answer_question_id});
+        my $question = $sth->fetchrow_hashref;  #TODO ASSERT  
 
         $sth = $$app{dbh}->prepare("
             SELECT text, id
-            FROM answers WHERE question_id = ?
+            FROM single_answer_questions_answers WHERE question_id = ?
         ");
-        $sth->execute($$question_row{id});
+        $sth->execute($$question{id});
     
         my @answers; 
         while(my $row = $sth->fetchrow_hashref)
@@ -168,13 +170,13 @@ sub getQuestion($)
             TRACE("Question Answer", Dumper $row)
         }    
     
-        my $result = {
+        $result = {
             answers => \@answers,
-            type => $$question_types{$$question_row{type_id}},
-            text => $$question_row{text},
+            type => "single_answer",
+            text => $$question{text},
             question_number => $$params{question_number}
         };
-    
+    }
     #TODO Other question types
 
     return $result;

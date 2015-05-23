@@ -112,10 +112,13 @@ sub Action($)
     my($self)= @_;
 
     my $actions_map = {
-       get_tests            => \&TestMe::Tests::Tests::getTests,
-       create_account       => \&TestMe::Accounts::Accounts::createAccount,
-       login                => \&TestMe::Security::Security::logIn,
-       get_account_details  => \&TestMe::Accounts::Accounts::getAccountDetails
+        get_tests           => \&TestMe::Tests::Tests::getTests,
+        create_account      => \&TestMe::Accounts::Accounts::createAccount,
+        login               => \&TestMe::Security::Security::logIn,
+        get_account_details => \&TestMe::Accounts::Accounts::getAccountDetails,
+        begin_test          => \&TestMe::Tests::Tests::beginTest,
+        get_question        => \&TestMe::Tests::Tests::getQuestion,
+        submit_answer       => \&TestMe::Tests::Tests::submitAnswer
     };
 
     if(defined $$self{cgi}{action} && exists $$actions_map{$$self{cgi}{action}})

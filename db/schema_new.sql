@@ -1,7 +1,7 @@
 --As postgres
 
 CREATE USER t_usr WITH PASSWORD '123';
-GRANT ALL PRIVILEGES ON DATABASE "test_me" to t_usr;
+GRANT ALL PRIVILEGES ON DATABASE "test_me1" to t_usr;
 
 CREATE TABLE topics(
     id SERIAL PRIMARY KEY,
@@ -45,29 +45,31 @@ CREATE VIEW tests_vw AS(
 );
 GRANT ALL ON tests_vw TO t_usr;
 
-CREATE TABLE single_answer_questions(
+CREATE TABLE question_types(
     id SERIAL PRIMARY KEY,
-    text TEXT NOT NULL
+    name TEXT NOT NULL UNIQUE
 );
-GRANT ALL ON single_answer_questions TO t_usr;
-GRANT ALL ON single_answer_questions_id_seq TO t_usr;
-
-CREATE TABLE single_answer_questions_answers(
-    id SERIAL PRIMARY KEY,
-    text TEXT NOT NULL,
-    is_correct BOOLEAN NOT NULL DEFAULT false,
-    question_id INTEGER REFERENCES single_answer_questions(id)
-);
-GRANT ALL ON single_answer_questions_answers TO t_usr;
-GRANT ALL ON single_answer_questions_answers_id_seq TO t_usr;
+GRANT ALL ON question_types TO t_usr;
+GRANT ALL ON question_types_id_seq TO t_usr;
+INSERT INTO question_types(name) VALUES('Single Answer'), ('Multiple Answer'), ('Free Answer');
 
 CREATE TABLE questions(
     id SERIAL PRIMARY KEY,
+    text TEXT NOT NULL,
     test_id INTEGER NOT NULL REFERENCES tests(id),
-    single_answer_question_id INTEGER REFERENCES single_answer_questions(id)
+    type_id INTEGER NOT NULL REFERENCES question_types(id)
 );
 GRANT ALL ON questions TO t_usr;
 GRANT ALL ON questions_id_seq TO t_usr;
+
+CREATE TABLE answers(
+    id SERIAL PRIMARY KEY,
+    text TEXT NOT NULL,
+    is_correct BOOLEAN NOT NULL DEFAULT false,
+    question_id INTEGER NOT NULL REFERENCES questions(id)
+);
+GRANT ALL ON answers TO t_usr;
+GRANT ALL ON answers_id_seq TO t_usr;
 
 CREATE TABLE account_ranks(
     id SERIAL PRIMARY KEY,
@@ -131,7 +133,7 @@ GRANT ALL ON test_session_answers TO t_usr;
 GRANT ALL ON test_session_answers_id_seq TO t_usr;
 
 CREATE VIEW available_tests_vw AS (
-    SELECT T.* 
+    SELECT DISTINCT T.* 
     FROM tests T JOIN questions Q ON Q.test_id = T.id
 );
 GRANT ALL ON available_tests_vw TO t_usr;

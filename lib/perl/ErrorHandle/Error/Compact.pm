@@ -23,6 +23,8 @@ sub ASSERT($;$$)
 
     if(!$cond)
     {
+        my ($package, $filename, $line) = caller;
+        TRACE("ASSERT FAILED:", $filename . ", Line:" . $line);
         die bless {msg => $msg, code => $code}, "sysError";
     }
 }
@@ -33,6 +35,8 @@ sub ASSERT_PEER($;$$)
 
     if(!$cond)
     {
+        my ($package, $filename, $line) = caller;
+        TRACE("ASSERT_PEER FAILED", $filename .", Line:" . $line);
         die bless {msg => $msg, code => $code}, "peerError";
     }
 }
@@ -43,6 +47,8 @@ sub ASSERT_USER($;$$)
 
     if(!$cond)
     {
+        my ($package, $filename, $line) = caller;
+        TRACE("ASSERT_USER FAILED", $filename . ", Line:" .$line);
         die bless {msg => $msg, code => $code}, "userError";
     }
 }
