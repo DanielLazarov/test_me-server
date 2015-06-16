@@ -6,13 +6,20 @@ use DBI;
 use Data::Dumper;
 
 use ErrorHandle::Error::Compact;
+use TestMe::Security::Security;
 
 sub getTests($)
 {
     my ($app) = @_;
 
     my $params = $$app{cgi};
-    #TODO Assert User Session
+     
+    ASSERT_USER(
+        TestMe::Security::Security::verifySession($app, $$params{account_id}, $$params{session_token}),
+        "Authentication Problem, please Log in Again",
+        "TMU001"
+    );
+
     my $all_difficulties = 1;
     my $all_topics = 1;
 
@@ -53,8 +60,14 @@ sub beginTest($)
     my ($app) = @_;
     
     my $params = $$app{cgi};
-    #TODO Assert user Session
-    ASSERT_PEER($$params{random_test} || $$params{test_id}, "Missing Param");
+    
+    ASSERT($$params{random_test} || $$params{test_id}, "Missing Param");
+
+    ASSERT_USER(
+        TestMe::Security::Security::verifySession($app, $$params{account_id}, $$params{session_token}),
+        "Authentication Problem, please Log in Again",
+        "TMU001"
+    );
 
     my $test_row;
     my $sth;
@@ -129,10 +142,16 @@ sub getQuestion($)
         2 => "multiple_answers",
         3 => "free_answer",
     };
-#TODO Assert Account session
+
     my $params = $$app{cgi};
 
-    ASSERT_PEER(defined $$params{account_id} && defined $$params{session_token} && $$params{test_session_token}, "Missing Param");
+    ASSERT(defined $$params{account_id} && defined $$params{session_token} && $$params{test_session_token}, "Missing Param");
+    
+    ASSERT_USER(
+        TestMe::Security::Security::verifySession($app, $$params{account_id}, $$params{session_token}),
+        "Authentication Problem, please Log in Again",
+        "TMU001"
+    );
 
     if(!defined $$params{question_number})
     {
@@ -148,34 +167,38 @@ sub getQuestion($)
     ASSERT($sth->rows == 1, "Incorrect session token");
     my $test_session_row = $sth->fetchrow_hashref;
 
-    ASSERT_USER(scalar @{$$test_session_row{questions_id}} > $$params{question_number}, "Test Has finished", "TESTFINISHED");
+    TRACE("Total questions: ", scalar @{$$test_session_row{questions_id}});
+    TRACE("Wants question: ", $$params{question_number});
+
+    if(scalar @{$$test_session_row{questions_id}} <= $$params{question_number})
+    {
+        return {answers => undef, type => undef, text => undef, question_number => -1};
+    }
     $sth = $$app{dbh}->prepare("SELECT * FROM questions where id = ?");
     $sth->execute($$test_session_row{questions_id}[$$params{question_number}]);
     my $question_row = $sth->fetchrow_hashref;
      
      
 
-        $sth = $$app{dbh}->prepare("
-            SELECT text, id
-            FROM answers WHERE question_id = ?
-        ");
-        $sth->execute($$question_row{id});
+    $sth = $$app{dbh}->prepare("
+        SELECT text, id
+        FROM answers WHERE question_id = ?
+    ");
+    $sth->execute($$question_row{id});
     
-        my @answers; 
-        while(my $row = $sth->fetchrow_hashref)
-        {
-            push @answers, $row;
-            TRACE("Question Answer", Dumper $row)
-        }    
-    
-        my $result = {
-            answers => \@answers,
-            type => $$question_types{$$question_row{type_id}},
-            text => $$question_row{text},
-            question_number => $$params{question_number}
-        };
-    
-    #TODO Other question types
+    my @answers; 
+    while(my $row = $sth->fetchrow_hashref)
+    {
+        push @answers, $row;
+        TRACE("Question Answer", Dumper $row)
+    }    
+   
+    my $result = {
+        answers => \@answers,
+        type => $$question_types{$$question_row{type_id}},
+        text => $$question_row{text},
+        question_number => $$params{question_number}
+    };    
 
     return $result;
 
@@ -184,29 +207,153 @@ sub getQuestion($)
 sub submitAnswer($)
 {
     my ($app) = @_;
-    my $single_answer = $$app{cgi}{single_answer};
+    
+    my $params = $$app{cgi};
+
+    ASSERT_USER(
+        TestMe::Security::Security::verifySession($app, $$params{account_id}, $$params{session_token}),
+        "Authentication Problem, please Log in Again",
+        "TMU001"
+    );
+
+    my $single_answer = $$params{single_answer};
+
     my @multiple_answers;
-    if(defined $$app{cgi}{multiple_answers})
+    if(defined $$params{multiple_answers})
     {
-        @multiple_answers = split(",", $$app{cgi}{multiple_answers});
+        @multiple_answers = split(",", $$params{multiple_answers});
     }
-    my $free_answer = $$app{cgi}{free_answer};
+    my $free_answer = $$params{free_answer};
 
     my $sth = $$app{dbh}->prepare("
         SELECT * FROM test_sessions WHERE session_token = ?
     ");
-    $sth->execute($$app{cgi}{test_session_token});
-
+    $sth->execute($$params{test_session_token});
+    ASSERT($sth->rows == 1);
     my $test_session_row = $sth->fetchrow_hashref;
+    
     
     my $sth = $$app{dbh}->prepare("
         INSERT INTO test_session_answers
         VALUES(default, ?, default, ?, null, ?, ?, ?)
     ");
-    $sth->execute($$test_session_row{id}, $$test_session_row{questions_id}[$$app{cgi}{question_number}], $single_answer, \@multiple_answers, $free_answer);
-    
+    $sth->execute($$test_session_row{id}, $$test_session_row{questions_id}[$$params{question_number}], $single_answer, (scalar @multiple_answers ? \@multiple_answers : undef), $free_answer);
+    ASSERT($sth->rows == 1);
     $$app{cgi}{question_number}++;
     return getQuestion($app);
 }
 
+sub getResult($)
+{
+    my ($app) = @_;
+
+    my $params = $$app{cgi};
+
+    ASSERT_USER(
+        TestMe::Security::Security::verifySession($app, $$params{account_id}, $$params{session_token}),
+        "Authentication Problem, please Log in Again",
+        "TMU001"
+    );
+
+    my $sth = $$app{dbh}->prepare("
+        SELECT *, 
+            (row__question_id).points AS points,
+            (row__account_id).id AS account_id,
+            (row__account_id).points AS account_points,
+            (row__correct_answer).single AS single,
+            (row__correct_answer).multiple AS multiple,
+            (row__correct_answer).free AS free
+        FROM test_results_vw WHERE (row__test_session_id).session_token = ?");
+    $sth->execute($$params{test_session_token});
+    my $account_points;   
+    my $account_id;    
+
+    my $total_points = 0;
+    my $earned_points = 0;
+    while(my $row = $sth->fetchrow_hashref)
+    {
+        $account_points = $$row{account_points};
+        $account_id = $$row{account_id};
+
+        $total_points += $$row{points};
+        if(defined $$row{single})
+        {
+            if($$row{single} == $$row{single_answer_question_answered})
+            {
+                $earned_points += $$row{points};
+            }
+        }
+        elsif(defined $$row{free})
+        {
+            if($$row{free} eq $$row{free_answer_question_answered})
+            {
+                $earned_points += $$row{points};
+            }
+        }
+        elsif(defined $$row{multiple})
+        {
+            my @answered_arr = @{$$row{multiple_answer_question_answered}};
+            my @correct_arr = @{$$row{multiple}};
+
+            my $eq = 1;
+            foreach my $answer (@answered_arr)
+            {
+                my $contains = 0;
+                foreach my $correct (@correct_arr)
+                {
+                    if($correct == $answer)
+                    {
+                        $contains = 1;
+                        last;
+                    }
+                }
+                if(!$contains)
+                {
+                    $eq = 0;
+                    last;
+                }
+            }
+
+            if($eq)
+            {
+                $earned_points += $$row{points};
+            }
+        }
+
+    }
+    
+    $account_points = $account_points + $earned_points - $total_points/2;
+    if($account_points < 0)
+    {
+        $account_points = 0;
+    }    
+
+    my $rank_id;
+    if($account_points <= 100 )
+    {
+        $rank_id = 1;
+    }
+    elsif($account_points > 100 && $account_points <= 500)
+    {
+        $rank_id = 2;
+    }
+    elsif($account_points > 500 && $account_points <= 2500)
+    {
+        $rank_id = 3;
+    }
+    elsif($account_points > 2500 && $account_points <= 10000)
+    {
+        $rank_id = 4;
+    }
+    else
+    {
+        $rank_id = 5;
+    }
+
+    $sth = $$app{dbh}->prepare("UPDATE accounts SET points = ?, rank_id = ? WHERE id = ?");
+    $sth->execute(int($account_points), $rank_id, $account_id);
+    ASSERT($sth->rows == 1);
+
+    return {earned => $earned_points, total => $total_points}; 
+}
 1;

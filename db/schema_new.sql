@@ -56,6 +56,7 @@ INSERT INTO question_types(name) VALUES('Single Answer'), ('Multiple Answer'), (
 CREATE TABLE questions(
     id SERIAL PRIMARY KEY,
     text TEXT NOT NULL,
+    points INTEGER NOT NULL,
     test_id INTEGER NOT NULL REFERENCES tests(id),
     type_id INTEGER NOT NULL REFERENCES question_types(id)
 );
@@ -65,11 +66,20 @@ GRANT ALL ON questions_id_seq TO t_usr;
 CREATE TABLE answers(
     id SERIAL PRIMARY KEY,
     text TEXT NOT NULL,
-    is_correct BOOLEAN NOT NULL DEFAULT false,
     question_id INTEGER NOT NULL REFERENCES questions(id)
 );
 GRANT ALL ON answers TO t_usr;
 GRANT ALL ON answers_id_seq TO t_usr;
+
+CREATE TABLE correct_answers(
+    id SERIAL PRIMARY KEY,
+    question_id INTEGER REFERENCES questions(id),
+    single INTEGER,
+    multiple INTEGER[],
+    free TEXT
+);
+GRANT ALL ON correct_answers TO t_usr;
+GRANT ALL ON correct_answers_id_seq TO t_usr;
 
 CREATE TABLE account_ranks(
     id SERIAL PRIMARY KEY,
@@ -86,6 +96,7 @@ CREATE TABLE accounts(
     first_name TEXT,
     last_name TEXT,
     email TEXT NOT NULL UNIQUE,
+    points INTEGER NOT NULL DEFAULT 0,
     rank_id INTEGER REFERENCES account_ranks(id)
 );
 GRANT ALL ON accounts TO t_usr;
@@ -138,3 +149,19 @@ CREATE VIEW available_tests_vw AS (
     FROM tests T JOIN questions Q ON Q.test_id = T.id
 );
 GRANT ALL ON available_tests_vw TO t_usr;
+
+CREATE VIEW test_results_vw AS (
+    SELECT TSA.*,
+        ROW(TS.*)::test_sessions AS row__test_session_id,
+        ROW(T.*)::tests AS row__test_id,
+        ROW(A.*)::accounts AS row__account_id,
+        ROW(Q.*)::questions AS row__question_id,
+        ROW(CA.*)::correct_answers AS row__correct_answer
+    FROM test_session_answers TSA 
+        JOIN test_sessions TS ON TSA.test_session_id = TS.id
+            JOIN tests T ON TS.test_id = T.id
+            JOIN accounts A ON TS.account_id = A.id
+        JOIN questions Q ON TSA.question_id = Q.id
+            JOIN correct_answers CA ON CA.question_id = Q.id
+);
+GRANT ALL ON test_results_vw TO t_usr;

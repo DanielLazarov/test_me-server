@@ -15,8 +15,7 @@ sub logIn($)
 
     my $params = $$app{cgi};
     
-    ASSERT_PEER(defined $$params{username}, "Missing Param");
-    ASSERT_PEER(defined $$params{password}, "Missing Param");
+    ASSERT(defined $$params{username} && defined $$params{password}, "Missing Param");
 
     my $sth = $$app{dbh}->prepare(
         q{

@@ -119,7 +119,7 @@ sub Action($)
         begin_test          => \&TestMe::Tests::Tests::beginTest,
         get_question        => \&TestMe::Tests::Tests::getQuestion,
         submit_answer       => \&TestMe::Tests::Tests::submitAnswer,
-        #get_result          => \&TestMe::Tests::Tests::getResult
+        get_result          => \&TestMe::Tests::Tests::getResult
     };
 
     if(defined $$self{cgi}{action} && exists $$actions_map{$$self{cgi}{action}})
