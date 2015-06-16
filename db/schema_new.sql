@@ -1,7 +1,7 @@
 --As postgres
 
 CREATE USER t_usr WITH PASSWORD '123';
-GRANT ALL PRIVILEGES ON DATABASE "test_me1" to t_usr;
+GRANT ALL PRIVILEGES ON DATABASE "test_me" to t_usr;
 
 CREATE TABLE topics(
     id SERIAL PRIMARY KEY,
@@ -80,11 +80,12 @@ GRANT ALL ON account_ranks_id_seq TO t_usr;
 
 CREATE TABLE accounts(
     id SERIAL PRIMARY KEY,
-    email TEXT NOT NULL UNIQUE,
+    username TEXT NOT NULL UNIQUE,
     password TEXT NOT NULL,
     account_id TEXT NOT NULL UNIQUE DEFAULT md5(now()::text || random()::text),
     first_name TEXT,
     last_name TEXT,
+    email TEXT NOT NULL UNIQUE,
     rank_id INTEGER REFERENCES account_ranks(id)
 );
 GRANT ALL ON accounts TO t_usr;

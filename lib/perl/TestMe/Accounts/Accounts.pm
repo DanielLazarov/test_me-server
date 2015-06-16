@@ -32,6 +32,7 @@ sub getAccountDetails($)
     my $account_row = $sth->fetchrow_hashref;
 
     my $result = {
+	username    => $$account_row{username},
         account_id  => $$account_row{account_id},
         email       => $$account_row{email},
         first_name  => $$account_row{first_name},
@@ -48,14 +49,16 @@ sub createAccount($)
     my ($app) = @_;
 
     my $params = $$app{cgi};
-
+    
+    ASSERT_USER(length($$params{username}) >= 6, "Username should be at least 6 characters", "TM002");		
+    ASSERT_USER(length($$params{password}) >= 6, "Password should be at least 6 characters", "TM003");
     my $password = sha256_hex($$params{password});
     my $sth = $$app{dbh}->prepare(
         q{
             INSERT INTO accounts 
-            VALUES(default, ?, ?, default, ?, ?, 1)
+            VALUES(default, ?, ?, default, ?, ?, ?, 1)
     });
-    $sth->execute($$params{email}, $password, $$params{first_name}, $$params{last_name});
+    $sth->execute($$params{username}, $password, $$params{first_name}, $$params{last_name}, $$params{email});
 
     return {};
 }

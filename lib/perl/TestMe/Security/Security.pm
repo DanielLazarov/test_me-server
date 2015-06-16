@@ -14,23 +14,23 @@ sub logIn($)
     my ($app) = @_;
 
     my $params = $$app{cgi};
-
-    ASSERT_PEER(defined $$params{email}, "Missing Param");
+    
+    ASSERT_PEER(defined $$params{username}, "Missing Param");
     ASSERT_PEER(defined $$params{password}, "Missing Param");
 
     my $sth = $$app{dbh}->prepare(
         q{
             SELECT *
             FROM accounts_vw 
-            WHERE email = ?
+            WHERE username = ?
     });
-    $sth->execute($$params{email});
+    $sth->execute($$params{username});
     ASSERT($sth->rows <= 1);
 
-    ASSERT_USER($sth->rows == 1, "Incorrect Email or Password", "TMU001");
+    ASSERT_USER($sth->rows == 1, "Incorrect Username or Password", "TMU001");
     my $account_row = $sth->fetchrow_hashref;
 
-    ASSERT_USER(sha256_hex($$params{password}) eq $$account_row{password}, "Incorrect Email or Password", "TMU001");
+    ASSERT_USER(sha256_hex($$params{password}) eq $$account_row{password}, "Incorrect Username or Password", "TMU001");
 
     my $sth = $$app{dbh}->prepare(
         q{
@@ -42,6 +42,7 @@ sub logIn($)
 
     my $result = {
         account_id  => $$account_row{account_id},
+        username    => $$account_row{username},
         email       => $$account_row{email},
         first_name  => $$account_row{first_name},
         last_name   => $$account_row{last_name},
