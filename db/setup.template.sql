@@ -21,11 +21,11 @@ INSERT INTO topics(name)
             ('Physics'),
             ('Chemistry');
 
-INSERT INTO tests(name,topic_id,difficulty_id,inserted_by,updated_by)
-    VALUES('Test1', 1,3,'daniel','daniel'),
-            ('Test2', 2,4,'daniel', 'daniel'),
-            ('Test3', 3,2,'daniel', 'daniel'),
-            ('Test4', 4,1,'daniel', 'daniel');
+INSERT INTO tests(name,topic_id,difficulty_id,inserted_by,updated_by,is_timed, time_minutes, points)
+    VALUES('Test1', 1,3,'danieltest','danieltest', true, 1, 60),
+            ('Test2', 2,4,'daniel', 'daniel', true, 2, 50),
+            ('Test3', 3,2,'daniel', 'daniel', false, null, 5),
+            ('Test4', 4,1,'daniel', 'daniel', false, null, 5);
 
 INSERT INTO questions(text, points, test_id, type_id)
     VALUES('Pi equals?', 5, 1, 1),

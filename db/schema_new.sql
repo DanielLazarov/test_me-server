@@ -30,20 +30,12 @@ CREATE TABLE tests(
     downvote_count INTEGER NOT NULL DEFAULT 0,
     question_count INTEGER NOT NULL DEFAULT 0,
     topic_id INTEGER NOT NULL REFERENCES topics(id),
-    difficulty_id INTEGER NOT NULL REFERENCES difficulties(id)
+    difficulty_id INTEGER NOT NULL REFERENCES difficulties(id),
+    points INT NOT NULL DEFAULT 0
 );
 GRANT ALL ON tests TO t_usr;
 GRANT ALL ON tests_id_seq TO t_usr;
 
-CREATE VIEW tests_vw AS(
-    SELECT T.*, 
-        TOP.name AS topic__name, 
-        D.name AS difficulty__name
-    FROM tests T
-        JOIN topics TOP ON T.topic_id = TOP.id
-        JOIN difficulties D ON T.difficulty_id = D.id
-);
-GRANT ALL ON tests_vw TO t_usr;
 
 CREATE TABLE question_types(
     id SERIAL PRIMARY KEY,
@@ -165,3 +157,16 @@ CREATE VIEW test_results_vw AS (
             JOIN correct_answers CA ON CA.question_id = Q.id
 );
 GRANT ALL ON test_results_vw TO t_usr;
+
+CREATE VIEW tests_vw AS(
+    SELECT T.*, 
+        TOP.name AS topic__name, 
+        D.name AS difficulty__name,
+        A.account_id AS account_id
+    FROM tests T
+        JOIN topics TOP ON T.topic_id = TOP.id
+        JOIN difficulties D ON T.difficulty_id = D.id
+            LEFT JOIN accounts A ON T.inserted_by = A.username
+);
+GRANT ALL ON tests_vw TO t_usr;
+
